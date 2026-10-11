@@ -36,6 +36,10 @@ uv run pytest
 | `GET` | `/` | `{"message": "Regulars API is running!"}` |
 | `GET` | `/health` | `{"status": "ok"}` |
 | `GET` | `/db-check` | Runs `SELECT 1` and returns `{"database": "connected"}` when PostgreSQL is reachable |
+| `GET` | `/test-table` | Returns all rows from `test-table` |
+| `GET` | `/test-table/{row_id}` | Returns one row, or 404 if it does not exist |
+| `PUT` | `/test-table/{row_id}` | Updates a row with JSON body `{"content": "..."}` |
+| `DELETE` | `/test-table/{row_id}` | Deletes a row, or 404 if it does not exist |
 | `GET` | `/docs` | FastAPI interactive API documentation |
 
 ## PostgreSQL connection demo
