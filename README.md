@@ -54,3 +54,32 @@ For local development, set `DATABASE_URL` to a PostgreSQL database reachable fro
 ## Railway deployment
 
 The production start command is `uv run uvicorn main:app --host 0.0.0.0 --port $PORT`. Railway should install uv and use the committed `uv.lock` during its build.
+
+## Database schema and migrations
+
+Alembic tracks database structure changes in `migrations/versions/`. A fresh development database can be built from the migration history with:
+
+```bash
+DATABASE_URL='postgresql://user:password@localhost:5432/regulars_dev' uv run alembic upgrade head
+```
+
+### Run migrations against Railway through an SSH tunnel
+
+If you connect to Railway PostgreSQL from your Mac using `railway connect Postgres --tunnel-only`, leave that command running in one Terminal window. It prints a temporary local host, port, username, password, and database name. In a **second** Terminal window, from this project directory, set `DATABASE_URL` using those printed values and run the migration:
+
+```bash
+export DATABASE_URL='postgresql://postgres:YOUR_TUNNEL_PASSWORD@127.0.0.1:YOUR_TUNNEL_PORT/railway'
+uv run alembic upgrade head
+```
+
+Replace the placeholders with the values shown by the active tunnel. Keep the tunnel open until Alembic finishes. The exported variable applies only to that second Terminal session; close it and you will need to set it again. Do not put the real connection URL in the README, source code, or Git.
+
+Use a disposable development database for experiments and resets; never drop or reset the Railway production database to start over. To create a migration after changing a SQLAlchemy model:
+
+```bash
+uv run alembic revision --autogenerate -m "describe the schema change"
+```
+
+Review and edit every generated migration before applying it. Autogeneration does not capture every database object (including this project's trigger), so trigger changes must be written explicitly in a migration. Apply reviewed migrations with `DATABASE_URL=... uv run alembic upgrade head`.
+
+The first migration creates the `users` table and its `updated_at` trigger on a fresh database. Railway was initialized by applying this migration through the SSH tunnel above. For any other database where these objects were created manually, compare the table, constraints, defaults, and trigger with `migrations/versions/0001_users_baseline.py` before running migrations. If they already match, record the baseline with `DATABASE_URL=... uv run alembic stamp head` instead of running its create-table migration; stamping records the version without executing it.
