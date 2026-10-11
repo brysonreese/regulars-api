@@ -1,18 +1,19 @@
-from fastapi import FastAPI, HTTPException
-from pydantic import BaseModel
-from sqlalchemy import text
-from sqlalchemy.exc import SQLAlchemyError
+from typing import Annotated
+from uuid import UUID
 
-from database import get_engine
+from fastapi import Depends, FastAPI, HTTPException, Response, status
+from sqlalchemy import select, text
+from sqlalchemy.exc import IntegrityError, SQLAlchemyError
+from sqlalchemy.orm import Session
+
+from database import get_db, get_engine
+from models import User
+from schemas import UserCreate, UserRead, UserUpdate
 
 app = FastAPI(
     title="Regulars API",
     version="0.1.0",
 )
-
-
-class TestTableUpdate(BaseModel):
-    content: str
 
 
 @app.get("/")
@@ -41,70 +42,69 @@ def database_check():
     return {"database": "connected"}
 
 
-@app.get("/test-table")
-def get_test_rows():
-    with get_engine().connect() as connection:
-        rows = connection.execute(
-            text('SELECT id, content FROM "test-table" ORDER BY id')
-        ).mappings().all()
+@app.post("/users", response_model=UserRead, status_code=status.HTTP_201_CREATED)
+def create_user(user_data: UserCreate, db: Annotated[Session, Depends(get_db)]):
+    user = User(**user_data.model_dump())
+    db.add(user)
 
-    return [dict(row) for row in rows]
+    try:
+        db.commit()
+    except IntegrityError as exc:
+        db.rollback()
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="Could not create user; the username may already be in use",
+        ) from exc
 
-
-@app.post("/test-table", status_code=201)
-def create_test_row(new_row: TestTableUpdate):
-    with get_engine().begin() as connection:
-        row = connection.execute(
-            text(
-                'INSERT INTO "test-table" (content) VALUES (:content) '
-                'RETURNING id, content'
-            ),
-            {"content": new_row.content},
-        ).mappings().one()
-
-    return dict(row)
+    db.refresh(user)
+    return user
 
 
-@app.get("/test-table/{row_id}")
-def get_test_row(row_id: int):
-    with get_engine().connect() as connection:
-        row = connection.execute(
-            text('SELECT id, content FROM "test-table" WHERE id = :id'),
-            {"id": row_id},
-        ).mappings().first()
-
-    if row is None:
-        raise HTTPException(status_code=404, detail="Row not found")
-
-    return dict(row)
+@app.get("/users", response_model=list[UserRead])
+def get_users(db: Annotated[Session, Depends(get_db)]):
+    return db.scalars(select(User).order_by(User.created_at.desc())).all()
 
 
-@app.put("/test-table/{row_id}")
-def update_test_row(row_id: int, update: TestTableUpdate):
-    with get_engine().begin() as connection:
-        row = connection.execute(
-            text(
-                'UPDATE "test-table" SET content = :content '
-                'WHERE id = :id RETURNING id, content'
-            ),
-            {"id": row_id, "content": update.content},
-        ).mappings().first()
-
-    if row is None:
-        raise HTTPException(status_code=404, detail="Row not found")
-
-    return dict(row)
+@app.get("/users/{user_id}", response_model=UserRead)
+def get_user(user_id: UUID, db: Annotated[Session, Depends(get_db)]):
+    user = db.get(User, user_id)
+    if user is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
+    return user
 
 
-@app.delete("/test-table/{row_id}")
-def delete_test_row(row_id: int):
-    with get_engine().begin() as connection:
-        deleted_id = connection.execute(
-            text('DELETE FROM "test-table" WHERE id = :id RETURNING id'),
-            {"id": row_id},
-        ).scalar_one_or_none()
+@app.put("/users/{user_id}", response_model=UserRead)
+def update_user(
+    user_id: UUID,
+    user_data: UserUpdate,
+    db: Annotated[Session, Depends(get_db)],
+):
+    user = db.get(User, user_id)
+    if user is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
 
-    if deleted_id is None:
-        raise HTTPException(status_code=404, detail="Row not found")
+    user.username = user_data.username
+    user.display_name = user_data.display_name
 
-    return {"deleted": True, "id": deleted_id}
+    try:
+        db.commit()
+    except IntegrityError as exc:
+        db.rollback()
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="Could not update user; the username may already be in use",
+        ) from exc
+
+    db.refresh(user)
+    return user
+
+
+@app.delete("/users/{user_id}", status_code=status.HTTP_204_NO_CONTENT)
+def delete_user(user_id: UUID, db: Annotated[Session, Depends(get_db)]):
+    user = db.get(User, user_id)
+    if user is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
+
+    db.delete(user)
+    db.commit()
+    return Response(status_code=status.HTTP_204_NO_CONTENT)

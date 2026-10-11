@@ -36,11 +36,11 @@ uv run pytest
 | `GET` | `/` | `{"message": "Regulars API is running!"}` |
 | `GET` | `/health` | `{"status": "ok"}` |
 | `GET` | `/db-check` | Runs `SELECT 1` and returns `{"database": "connected"}` when PostgreSQL is reachable |
-| `GET` | `/test-table` | Returns all rows from `test-table` |
-| `POST` | `/test-table` | Inserts a row from JSON body `{"content": "..."}`; PostgreSQL assigns the ID |
-| `GET` | `/test-table/{row_id}` | Returns one row, or 404 if it does not exist |
-| `PUT` | `/test-table/{row_id}` | Updates a row with JSON body `{"content": "..."}` |
-| `DELETE` | `/test-table/{row_id}` | Deletes a row, or 404 if it does not exist |
+| `GET` | `/users` | Returns all users |
+| `POST` | `/users` | Creates a user from JSON body `{"username": "...", "display_name": "..."}` |
+| `GET` | `/users/{user_id}` | Returns one user by UUID, or 404 if it does not exist |
+| `PUT` | `/users/{user_id}` | Updates username and display name from JSON body `{"username": "...", "display_name": "..."}` |
+| `DELETE` | `/users/{user_id}` | Deletes a user; returns 204, or 404 if it does not exist |
 | `GET` | `/docs` | FastAPI interactive API documentation |
 
 ## PostgreSQL connection demo
