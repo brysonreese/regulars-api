@@ -51,6 +51,20 @@ def get_test_rows():
     return [dict(row) for row in rows]
 
 
+@app.post("/test-table", status_code=201)
+def create_test_row(new_row: TestTableUpdate):
+    with get_engine().begin() as connection:
+        row = connection.execute(
+            text(
+                'INSERT INTO "test-table" (content) VALUES (:content) '
+                'RETURNING id, content'
+            ),
+            {"content": new_row.content},
+        ).mappings().one()
+
+    return dict(row)
+
+
 @app.get("/test-table/{row_id}")
 def get_test_row(row_id: int):
     with get_engine().connect() as connection:
