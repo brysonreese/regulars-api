@@ -1,4 +1,8 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException
+from sqlalchemy import text
+from sqlalchemy.exc import SQLAlchemyError
+
+from database import get_engine
 
 app = FastAPI(
     title="Regulars API",
@@ -14,3 +18,19 @@ def home():
 @app.get("/health")
 def health():
     return {"status": "ok"}
+
+
+@app.get("/db-check")
+def database_check():
+    try:
+        with get_engine().connect() as connection:
+            connection.execute(text("SELECT 1"))
+    except RuntimeError as exc:
+        raise HTTPException(status_code=503, detail=str(exc)) from exc
+    except SQLAlchemyError as exc:
+        raise HTTPException(
+            status_code=503,
+            detail="Database connection failed",
+        ) from exc
+
+    return {"database": "connected"}

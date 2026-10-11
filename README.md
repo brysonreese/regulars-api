@@ -1,6 +1,6 @@
 # Regulars API
 
-The backend for Regulars, a social iOS app for sharing restaurant, bar, and café reviews and check-ins. This initial milestone provides a minimal FastAPI service, ready for local development.
+The backend for Regulars, a social iOS app for sharing restaurant, bar, and café reviews and check-ins. It currently provides a minimal FastAPI service and a small PostgreSQL connectivity example.
 
 ## Prerequisites
 
@@ -35,8 +35,17 @@ uv run pytest
 | --- | --- | --- |
 | `GET` | `/` | `{"message": "Regulars API is running!"}` |
 | `GET` | `/health` | `{"status": "ok"}` |
+| `GET` | `/db-check` | Runs `SELECT 1` and returns `{"database": "connected"}` when PostgreSQL is reachable |
 | `GET` | `/docs` | FastAPI interactive API documentation |
 
-## Railway deployment (planned)
+## PostgreSQL connection demo
 
-The next milestone is to deploy this service from GitHub to Railway. The production start command will be `uv run uvicorn main:app --host 0.0.0.0 --port $PORT`; deployment configuration will ensure Railway installs uv and uses the committed `uv.lock`. PostgreSQL integration will follow after the API deployment is confirmed.
+In Railway, add a PostgreSQL service to the same project. In the API service's Variables tab, add `DATABASE_URL` as a reference to the PostgreSQL service's `DATABASE_URL` variable (for example, `${{Postgres.DATABASE_URL}}`, using your database service's actual name). Railway's `DATABASE_URL` uses private networking for services in the same project, so the database does not need public access.
+
+Redeploy the API, then request `https://your-api-domain.up.railway.app/db-check`. A successful response means SQLAlchemy connected through Psycopg and ran `SELECT 1`. The endpoint does not create tables or store data; it is just a connection check. `/health` remains independent of PostgreSQL.
+
+For local development, set `DATABASE_URL` to a PostgreSQL database reachable from your machine. Keep the value in an ignored `.env` file or your shell environment; never commit credentials. Without that variable, the rest of the API still runs, and `/db-check` responds with HTTP 503.
+
+## Railway deployment
+
+The production start command is `uv run uvicorn main:app --host 0.0.0.0 --port $PORT`. Railway should install uv and use the committed `uv.lock` during its build.
