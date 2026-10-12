@@ -57,6 +57,7 @@ uv run pytest
 | `GET` | `/` | `{"message": "Regulars API is running!"}` |
 | `GET` | `/health` | `{"status": "ok"}` |
 | `GET` | `/db-check` | Runs `SELECT 1` and returns `{"database": "connected"}` when PostgreSQL is reachable |
+| `POST` | `/places` | Gets or creates a place from `{"apple_place_id": "..."}` and returns its UUID and Apple Place ID |
 | `GET` | `/users` | Returns all users |
 | `POST` | `/users` | Creates a user from JSON body `{"username": "...", "display_name": "..."}` |
 | `GET` | `/users/{user_id}` | Returns one user by UUID, or 404 if it does not exist |

@@ -18,7 +18,7 @@ config = context.config
 if config.config_file_name is not None:
     fileConfig(config.config_file_name)
 
-from models import Base, User  # noqa: F401 -- importing models registers metadata
+from models import Base  # importing models registers all tables with Base.metadata
 
 target_metadata = Base.metadata
 
