@@ -5,6 +5,9 @@ from sqlalchemy import create_engine, make_url
 from sqlalchemy import pool
 
 from alembic import context
+from dotenv import load_dotenv
+
+load_dotenv()
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.
@@ -29,6 +32,7 @@ def get_database_url() -> str:
     if url.drivername in {"postgres", "postgresql"}:
         url = url.set(drivername="postgresql+psycopg")
     return url.render_as_string(hide_password=False)
+
 
 # other values from the config, defined by the needs of env.py,
 # can be acquired:

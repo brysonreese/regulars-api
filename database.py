@@ -2,9 +2,12 @@ import os
 from collections.abc import Generator
 from functools import lru_cache
 
+from dotenv import load_dotenv
 from sqlalchemy import create_engine, make_url
 from sqlalchemy.engine import Engine
 from sqlalchemy.orm import Session, sessionmaker
+
+load_dotenv()
 
 
 @lru_cache

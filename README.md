@@ -15,13 +15,34 @@ From the project root, sync the locked dependencies:
 uv sync --dev
 ```
 
-## Run locally
+## Local development
+
+The API runs directly on your Mac; Docker Compose runs a separate local PostgreSQL database. Install and start Docker Desktop, then copy the example settings once (this checkout already includes an ignored local `.env`):
+
+```bash
+cp .env.example .env
+```
+
+Set `POSTGRES_IMAGE` in `.env` to the same major version as your Railway PostgreSQL service if it differs from the example. You can check the Railway server version in pgAdmin with `SHOW server_version;`. The `.env` file is loaded by both the API and Alembic; it contains only local development credentials and is ignored by Git.
+
+If you previously exported a Railway tunnel's `DATABASE_URL` in this Terminal, run `unset DATABASE_URL` before starting local commands so the local `.env` value is used.
+
+Start the local database and apply the schema:
+
+```bash
+docker compose up -d db
+uv run alembic upgrade head
+```
+
+Then start the API with hot reload:
 
 ```bash
 uv run uvicorn main:app --reload
 ```
 
 The API is available at `http://127.0.0.1:8000`. FastAPI's interactive documentation is at `http://127.0.0.1:8000/docs`.
+
+Stop the database with `docker compose down`; its named volume keeps local data between runs. This database is separate from Railway, so local work will not change deployed data. The Docker port is bound only to your Mac's loopback interface.
 
 ## Run tests
 
@@ -49,7 +70,7 @@ In Railway, add a PostgreSQL service to the same project. In the API service's V
 
 Redeploy the API, then request `https://your-api-domain.up.railway.app/db-check`. A successful response means SQLAlchemy connected through Psycopg and ran `SELECT 1`. The endpoint does not create tables or store data; it is just a connection check. `/health` remains independent of PostgreSQL.
 
-For local development, set `DATABASE_URL` to a PostgreSQL database reachable from your machine. Keep the value in an ignored `.env` file or your shell environment; never commit credentials. Without that variable, the rest of the API still runs, and `/db-check` responds with HTTP 503.
+Without `DATABASE_URL`, the rest of the API still runs, and `/db-check` responds with HTTP 503. For local development, the ignored `.env` file points the API at the Compose database. Never put Railway credentials in `.env.example` or commit them to Git.
 
 ## Railway deployment
 
@@ -57,11 +78,7 @@ The production start command is `uv run uvicorn main:app --host 0.0.0.0 --port $
 
 ## Database schema and migrations
 
-Alembic tracks database structure changes in `migrations/versions/`. A fresh development database can be built from the migration history with:
-
-```bash
-DATABASE_URL='postgresql://user:password@localhost:5432/regulars_dev' uv run alembic upgrade head
-```
+Alembic tracks database structure changes in `migrations/versions/`. For local development, `uv run alembic upgrade head` applies any pending migrations to the database configured in `.env`.
 
 ### Run migrations against Railway through an SSH tunnel
 

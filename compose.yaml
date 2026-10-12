@@ -1,0 +1,14 @@
+services:
+  db:
+    image: ${POSTGRES_IMAGE:-postgres:17}
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-regulars}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-regulars-dev}
+      POSTGRES_DB: ${POSTGRES_DB:-regulars_dev}
+    ports:
+      - "127.0.0.1:5432:5432"
+    volumes:
+      - regulars-postgres-data:/var/lib/postgresql/data
+
+volumes:
+  regulars-postgres-data:
