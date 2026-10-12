@@ -2,11 +2,9 @@ import uuid
 from datetime import datetime
 
 from sqlalchemy import DateTime, FetchedValue, Text, Uuid, func, text
-from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
+from sqlalchemy.orm import Mapped, mapped_column
 
-
-class Base(DeclarativeBase):
-    """Base class that collects SQLAlchemy model metadata."""
+from models.base import Base
 
 
 class User(Base):

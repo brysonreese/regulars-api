@@ -64,6 +64,10 @@ uv run pytest
 | `DELETE` | `/users/{user_id}` | Deletes a user; returns 204, or 404 if it does not exist |
 | `GET` | `/docs` | FastAPI interactive API documentation |
 
+## Project structure
+
+`main.py` creates the FastAPI application and registers routers. HTTP endpoints are grouped by resource in `routers/`, Pydantic request/response types are in `schemas/`, and SQLAlchemy models share the `Base` metadata exported from `models/`. Alembic imports the model package so every model is registered before migration autogeneration.
+
 ## PostgreSQL connection demo
 
 In Railway, add a PostgreSQL service to the same project. In the API service's Variables tab, add `DATABASE_URL` as a reference to the PostgreSQL service's `DATABASE_URL` variable (for example, `${{Postgres.DATABASE_URL}}`, using your database service's actual name). Railway's `DATABASE_URL` uses private networking for services in the same project, so the database does not need public access.
