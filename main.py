@@ -1,6 +1,6 @@
 from fastapi import FastAPI
 
-from routers import health, places, users
+from routers import health, places, reviews, users
 
 app = FastAPI(
     title="Regulars API",
@@ -9,4 +9,5 @@ app = FastAPI(
 
 app.include_router(health.router)
 app.include_router(places.router)
+app.include_router(reviews.router)
 app.include_router(users.router)
